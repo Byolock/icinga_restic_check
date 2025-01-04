@@ -3,7 +3,7 @@
 An [Icinga2](https://icinga.com)-Check for [Restic](https://restic.net) deduplicating backup repositories. With this check you can verify if a certain tag has a snapshot within a timeframe.
 When one snapshot exceeds the warn timerange (in days), then WARN is set. If one snapshot exceeds the crit timerange (in days) then CRIT is set. Otherwise OK.
 
-You can check multiple snapshots, the result list is checked. The repo is read without setting a lock (so read only), which improves performance. Python3 is needed but no dependencies.
+You can check multiple snapshots, the result list is checked. The repo is read without setting a lock (so read only), which improves performance. Python3.5 or greater is needed but no dependencies.
 
 ## Options
 
@@ -20,6 +20,7 @@ Optional:
 - ```-restic_snapshot_age_days_warn```: At what day delta warn should be set
 - ```-restic_snapshot_age_days_crit```: At what day delta crit should be set
 - ```-restic_compare_date```: Set the date to compare with instead of now (now is default)
+- ```-environment_file```: Provides additional env variables through a 'key=value' env file. One entry on each line. Use this option if you use a S3 repository.
 
 - ```-v```: Verbose mode for detailed logs
 ## Example

@@ -4,6 +4,7 @@ import subprocess
 import json
 import datetime
 import sys
+import os
 from enum import IntEnum
 
 CHECK_NAME = "restic"
@@ -16,7 +17,17 @@ class IcingaState(IntEnum):
 
 def run(args):
     base_cmd = '{restic_bin} -p {passwordfile} -r {repo}'.format(restic_bin=args.restic_bin, passwordfile=args.restic_repo_passwordfile, repo=args.restic_repo)
-    process_result = subprocess.Popen([args.restic_bin, '-p', args.restic_repo_passwordfile, '-r', args.restic_repo, '--no-lock', 'snapshots', '--tag', args.restic_check_tags, '--latest', '1', '--json'], stdout=subprocess.PIPE)
+    
+    env = os.environ
+
+    if args.environment_file is not None:
+        custom_env = get_env_data_as_dict(args.environment_file)
+        env = {env, custom_env}
+        if args.verbose:
+                print(f"Created custom ENV based on provided ENV File")
+
+    
+    process_result = subprocess.Popen([args.restic_bin, '-p', args.restic_repo_passwordfile, '-r', args.restic_repo, '--no-lock', 'snapshots', '--tag', args.restic_check_tags, '--latest', '1', '--json'], stdout=subprocess.PIPE, env=env)
     snapshots = json.loads(process_result.stdout.read())
 
     crits = 0
@@ -73,6 +84,11 @@ def run(args):
 
     sys.exit(status.value)
 
+def get_env_data_as_dict(path: str) -> dict:
+    with open(path, 'r') as f:
+       return dict(tuple(line.replace('\n', '').split('=')) for line
+                in f.readlines() if not line.startswith('#'))
+
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(prog="check_restic", description="Checker Plugin for Restic Backup")
     parser.add_argument("-restic_bin", type=str, default="/usr/bin/restic")
@@ -83,6 +99,7 @@ if __name__ == "__main__":
     parser.add_argument("-restic_snapshot_age_days_crit", type=int, default=2)
     parser.add_argument("-restic_compare_date", type=str, default=datetime.datetime.strftime(datetime.date.today(), "%Y-%m-%d"))
     parser.add_argument('-v', '--verbose', action='store_true')
+    parser.add_argument('-environment_file', type=str, default=None)
 
     args = parser.parse_args()
 
